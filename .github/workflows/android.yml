@@ -17,14 +17,14 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Grant execute permission
-        run: chmod +x gradlew
-
       - name: Build APK
-        run: ./gradlew assembleDebug
+        working-directory: ./CubeDashAndroid
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: app-debug
-          path: app/build/outputs/apk/debug/*.apk
+          path: CubeDashAndroid/app/build/outputs/apk/debug/*.apk
