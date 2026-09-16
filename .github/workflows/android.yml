@@ -9,96 +9,46 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up Java 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
-          cache: gradle
 
-      - name: Locate Android project
-        shell: bash
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          gradle-version: '8.11'
+
+      - name: Show project structure
         run: |
-          set -e
-
-          echo "=== repository root ==="
+          echo "=== PROJECT ROOT ==="
           pwd
-
           echo
-          echo "=== top-level files ==="
+          echo "=== FILES ==="
           ls -la
-
           echo
-          echo "=== searching for gradlew ==="
-
-          GRADLEW="$(find "$GITHUB_WORKSPACE" -type f -name "gradlew" -print -quit)"
-
-          if [ -z "$GRADLEW" ]; then
-            echo "ERROR: Could not find gradlew anywhere in the repository."
-            echo
-            echo "Files found:"
-            find "$GITHUB_WORKSPACE" -maxdepth 4 -type f | sort | head -200
-            exit 1
-          fi
-
-          PROJECT_DIR="$(dirname "$GRADLEW")"
-
-          echo "gradlew found at:"
-          echo "$GRADLEW"
-
+          echo "=== APP MODULE ==="
+          ls -la app
           echo
-          echo "Android project directory:"
-          echo "$PROJECT_DIR"
-
-          echo
-          echo "=== project files ==="
-          ls -la "$PROJECT_DIR"
-
-          # Save the directory for later steps.
-          echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
-
-      - name: Make Gradle wrapper executable
-        shell: bash
-        run: |
-          set -e
-          chmod +x "$PROJECT_DIR/gradlew"
-
-      - name: Check Gradle wrapper
-        shell: bash
-        working-directory: ${{ env.PROJECT_DIR }}
-        run: |
-          set -e
-
-          echo "=== Gradle version ==="
-          ./gradlew --version
+          echo "=== GRADLE VERSION ==="
+          gradle --version
 
       - name: Build debug APK
-        shell: bash
-        working-directory: ${{ env.PROJECT_DIR }}
         run: |
-          set -e
+          gradle assembleDebug --stacktrace --no-daemon
 
-          echo "=== Building CubeDash ==="
-          ./gradlew assembleDebug --stacktrace --no-daemon
-
-      - name: Find generated APK
-        shell: bash
+      - name: Find APK
         run: |
-          set -e
-
-          echo "=== APK files ==="
-
-          find "$GITHUB_WORKSPACE" \
-            -type f \
-            \( -name "*.apk" -o -name "*.aab" \) \
-            -print
+          echo "=== GENERATED APK FILES ==="
+          find . -type f -name "*.apk" -print
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: CubeDash-debug
           path: |
-            **/build/outputs/apk/debug/*.apk
+            app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
