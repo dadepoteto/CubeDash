@@ -1,7 +1,6 @@
-name: Build APK
+name: Build CubeDash APK
 
 on:
-  push:
   workflow_dispatch:
 
 jobs:
@@ -9,22 +8,39 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Set up Java
+      - name: Set up Java 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
 
-      - name: Build APK
-        working-directory: ./CubeDashAndroid
+      - name: Check project files
         run: |
-          chmod +x gradlew
-          ./gradlew assembleDebug
+          echo "Current directory:"
+          pwd
+          echo ""
+          echo "Files:"
+          ls -la
+          echo ""
+          echo "Gradle wrapper:"
+          ls -la gradlew
+
+      - name: Make Gradle wrapper executable
+        run: chmod +x ./gradlew
+
+      - name: Check Gradle
+        run: ./gradlew --version
+
+      - name: Build debug APK
+        run: ./gradlew assembleDebug --stacktrace
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: app-debug
-          path: CubeDashAndroid/app/build/outputs/apk/debug/*.apk
+          name: CubeDash-debug
+          path: |
+            **/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
